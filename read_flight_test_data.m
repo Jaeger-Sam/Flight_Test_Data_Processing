@@ -566,8 +566,8 @@ if crop_process_ftd == true
     load(append(cal_floc,'\',cal_file),'cal');
     
     disp('Input altimeter setting and temperature of the day.')
-    altimeter = input('altimeter (in Hg):    ');
-    temperature = input('temperature (F):    ');
+    altimeter =   input('altimeter (in Hg):    ');
+    temperature = input('temperature (F):      ');
 
     [t_GNSS_se,i_FMUR_se, i_n580_raw_se, i_n580_filt_se, ~] = crop_flight_test_data(test_data);
     test_data.data_FMUR = process_FMUR_data(test_data, i_FMUR_se, cal, altimeter, temperature);
@@ -587,5 +587,12 @@ else
     test_data.data_int = [];
 end
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% save test data
+    disp('Save flight test data?')
+    save_ftd = input('true / false:   ');
+    if save_ftd == true
+        ftd_fname = input('filename: ','s');
+        save(string(ftd_fname),'test_data')
+    end
 end

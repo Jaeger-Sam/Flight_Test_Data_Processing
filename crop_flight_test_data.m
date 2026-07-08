@@ -670,23 +670,30 @@ function [t_GNSS_se,i_FMUR_se, i_n580_raw_se,i_n580_filt_se,maneuver_label] = cr
             N_raw = id_e_raw - id_s_raw + 1;
             if N_filt > N_raw
                 id_e_filt = id_s_filt + N_raw - 1;
+                disp(append('N_filt = ',num2str(N_filt)))
+                disp(append('N_raw = ',num2str(N_raw)))
                 warning('n580 N_raw < N_filt')
             elseif N_raw > N_filt
                 id_e_raw = id_s_raw + N_filt - 1;
+                disp(append('N_filt = ',num2str(N_filt)))
+                disp(append('N_raw = ',num2str(N_raw)))
                 warning('n580 N_raw > N_filt')
             end
 
             % logic for FMUR indexing
             N_FMUR = i_FMUR_e - i_FMUR_s + 1;
             if N_FMUR < N_raw
+                disp(append('N_FMUR = ',num2str(N_FMUR)))
+                disp(append('N_n580 = ',num2str(N_raw)))
                 warning('N_FMUR < N_n580. FMUR and n580 data do not align.')
                 id_e_filt = id_s_filt + N_FMUR - 1;
                 id_e_raw = id_s_raw + N_FMUR -1;
             elseif N_FMUR > N_raw
+                disp(append('N_FMUR = ',num2str(N_FMUR)))
+                disp(append('N_n580 = ',num2str(N_raw)))
                 warning('N_FMUR > N_n580. FMUR and n580 data do not align.')
                 i_FMUR_e = i_FMUR_s + N_raw -1;
             end
-
 
             disp(append('Cropped maneuver jj = ',num2str(jj)))
             t_GNSS_se(jj,:) = [t_GNSS_start, t_GNSS_end];
@@ -724,19 +731,27 @@ function [t_GNSS_se,i_FMUR_se, i_n580_raw_se,i_n580_filt_se,maneuver_label] = cr
         N_raw = id_e_raw - id_s_raw + 1;
         if N_filt > N_raw
             id_e_filt = id_s_filt + N_raw - 1;
+            disp(append('N_filt = ',num2str(N_filt)))
+            disp(append('N_raw = ',num2str(N_raw)))
             warning('n580 N_raw < N_filt')
         elseif N_raw > N_filt
             id_e_raw = id_s_raw + N_filt - 1;
+            disp(append('N_filt = ',num2str(N_filt)))
+            disp(append('N_raw = ',num2str(N_raw)))
             warning('n580 N_raw > N_filt')
         end
 
         % logic for FMUR indexing
         N_FMUR = i_FMUR_e - i_FMUR_s + 1;
         if N_FMUR < N_raw
+            disp(append('N_FMUR = ',num2str(N_FMUR)))
+            disp(append('N_n580 = ',num2str(N_raw)))
             warning('N_FMUR < N_n580. FMUR and n580 data do not align.')
             id_e_filt = id_s_filt + N_FMUR - 1;
             id_e_raw = id_s_raw + N_FMUR -1;
         elseif N_FMUR > N_raw
+            disp(append('N_FMUR = ',num2str(N_FMUR)))
+            disp(append('N_n580 = ',num2str(N_raw)))
             warning('N_FMUR > N_n580. FMUR and n580 data do not align.')
             i_FMUR_e = i_FMUR_s + N_raw -1;
         end
