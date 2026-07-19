@@ -1,23 +1,24 @@
 % flight_test_plots generates time history and position plots from the
 % data_int data structure from process_flight_test_data. 
 % This function operates similarly to
-% SIMULATION_PLOTS.fcn in Sam's Flight Simulator. The following plots are
-% generated:
-%   figure(101): north-east-down position 3d plot (Hampel filter applied)
+% SIMULATION_PLOTS.fcn in Sam's Flight Simulator. 
+%
+% INPUTS:
+%   data_int: data structure from process_flight_test_data.fcn
+%
+% OUTPUTS: generated the following figures
+%   figure(101): North-East-Down position 3d plot (Hampel filter applied)
+%   figure(1001): GPS position zoomed to the ACRC field
 %   figure(10):  uvw from FMUR air data
 %   figure(11):  pqr from n580
 %   figure(12):  attitude (roll/pitch/yaw) from n580 (x axis linked)
 %   figure(13):  acceleration from n580
 %   figure(14): aero angle (alpha, beta, beta_f)
 %   figure(15): control time history (rpm, delta_e, delta_a, delta_r)
-%   figure(1001): GPS position zoomed to the ACRC field
-%   figure(21): alpha / q / delta_e (x axis linked)
-%   figure(22): beta / p / delta_a (x axis linked)
-%   figure(23): beta / r / delta_r (x axis linked)
-%   figure(24): n / ax / u (x axis linked, Hampel filter applied on n)
-%
-% INPUTS:
-%      data_int: data structure from process_flight_test_data.fcn
+%   figure(20): alpha / q / delta_e (x axis linked)
+%   figure(21): beta / p / delta_a (x axis linked)
+%   figure(22): beta / r / delta_r (x axis linked)
+%   figure(23): n / ax / u (x axis linked, Hampel filter applied on n)
 %
 % Sam Jaeger
 % jaege246@umn.edu
@@ -35,6 +36,13 @@ function flight_test_plots(data_int)
     zlabel('$-Z$ (ft)','FontSize',20,'Interpreter','latex')
     axis equal
     grid on
+
+    % lat-long position plot from n580 solution
+    figure(1001)
+    geoplot(data_int.PHI_PSI_H.n580(:,1),data_int.PHI_PSI_H.n580(:,2),'.r')
+    geobasemap satellite
+    title('GPS Position','FontSize',16,'Interpreter','latex')
+    geolimits([45.328 45.3293],[-93.2314 -93.23]) % ACRC Flying Field
 
     % u,v,w states from air data
     figure(10) 
@@ -87,7 +95,6 @@ function flight_test_plots(data_int)
     grid on
     legend(' $\alpha$',' $\beta$',' $\beta_f$','FontSize',20, 'Interpreter','latex','Location','southeast')
 
-
     % control surface time histories
     figure(15);
     title('Control Time history')
@@ -114,18 +121,13 @@ function flight_test_plots(data_int)
     grid on
     linkaxes(hc,'x')
 
-    % lat-long position plot from n580 solution
-    figure(1001)
-    geoplot(data_int.PHI_PSI_H.n580(:,1),data_int.PHI_PSI_H.n580(:,2),'.r')
-    geobasemap satellite
-    title('GPS Position','FontSize',16,'Interpreter','latex')
-    geolimits([45.328 45.3293],[-93.2314 -93.23]) % ACRC Flying Field
+
 
 
     % custom plots for Sys ID ---------------------------------------------
 
     % alpha / q / delta_e
-    figure(21); 
+    figure(20); 
     ha(1)=subplot(3,1,1);
     plot(data_int.t_out,data_int.alpha,'.'); 
     grid on; 
@@ -144,7 +146,7 @@ function flight_test_plots(data_int)
     linkaxes(ha,'x')
 
     % beta / p / delta_a
-    figure(22); 
+    figure(21); 
     hd(1)=subplot(3,1,1);
     plot(data_int.t_out,data_int.beta,'.'); 
     grid on; 
@@ -163,7 +165,7 @@ function flight_test_plots(data_int)
     linkaxes(hd,'x')
 
     % beta / r / delta_r
-    figure(23); 
+    figure(22); 
     he(1)=subplot(3,1,1);
     plot(data_int.t_out,data_int.beta,'.'); 
     grid on; 
