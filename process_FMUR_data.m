@@ -9,6 +9,7 @@
 %
 % INPUTS:
 %   test_data: data strcture from read_flight_test_data.fcn
+%   i_FMUR_se: 2 element vector of starting and ending cropping indices.
 %   cal: data structure of calibrations for the flight vehicle
 %       .p_alpha: polynomial of calibration of the angle of attack pot.
 %           (volts to deg)
@@ -30,7 +31,7 @@
 %       .b_w: wingspan of main wing in ft for non dim ang rate calcs
 %       .d: diameter of prop in ft for advance ratio calculation
 %       .FMUR_xyz_CG  FMUR w.r.t cg location (ft)
-%       .AB_xyz_CG  alpha beata sensor w.r.t cg (ft)
+%       .AB_xyz_CG  alpha beta sensor w.r.t cg (ft)
 %       .pitot_xyx_CG: pitot probe w.r.t cg (ft)
 %       .pres_stat_bias: static pressure sensor bias (lb/ft^2)
 %       .lam_Dp: differential pressure sensor scale factor error
@@ -68,6 +69,7 @@ function data_FMUR = process_FMUR_data(test_data, i_FMUR_se, cal, altimeter, tem
     else 
         % use system time if no GPS lock
         GPS_lock = false;
+        i_GPS_loss = i_FMUR_s;
         t_FMUR = test_data.FMUR.sys.time_s(i_FMUR_s:i_FMUR_e) - test_data.FMUR.sys.time_s(i_FMUR_s);
     end
     count =1;

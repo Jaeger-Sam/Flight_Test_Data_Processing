@@ -3,18 +3,27 @@
 % This function operates similarly to
 % SIMULATION_PLOTS.fcn in Sam's Flight Simulator. 
 %
+% flight_test_plots(data_int,tf_save_fig)
+%
 % INPUTS:
 %   data_int: data structure from process_flight_test_data.fcn
 %
+% OPTIONAL_INPUTS:
+%   tf_save_fig: true/false to save figures as .png, .eps, .svg
+%
 % OUTPUTS: generated the following figures
-%   figure(101): North-East-Down position 3d plot (Hampel filter applied)
-%   figure(1001): GPS position zoomed to the ACRC field
+%   figure(101): North-East-Down position 3d plot from n580 
+%       (Hampel filter applied)
+%   figure(1001): position from n580 zoomed to the ACRC field 
 %   figure(10):  uvw from FMUR air data
 %   figure(11):  pqr from n580
 %   figure(12):  attitude (roll/pitch/yaw) from n580 (x axis linked)
 %   figure(13):  acceleration from n580
 %   figure(14): aero angle (alpha, beta, beta_f)
 %   figure(15): control time history (rpm, delta_e, delta_a, delta_r)
+%   figure(16): flap deflection
+%   figure(17): inertial velocity (North-East-Down) from n580
+%   figure(18): altitude (geometric-n580 and pressure)
 %   figure(20): alpha / q / delta_e (x axis linked)
 %   figure(21): beta / p / delta_a (x axis linked)
 %   figure(22): beta / r / delta_r (x axis linked)
@@ -25,9 +34,20 @@
 % 10/29/2025
 %   Revised: 7/6/2026
 
-function flight_test_plots(data_int)
+function flight_test_plots(data_int,varargin)
     
-    % 3d position
+    % logic for optional inputs
+    narginchk(1,2)
+    if nargin == 1
+        tf_save_fig = false;
+    elseif nargin == 2
+        tf_save_fig = varargin{1};
+    else
+        disp('Invalid number of input arguments.')
+    end
+
+    % ---------------------------------------------------------------------
+    % North-East-Down 3d position from n580
     figure(101)
     plot3(hampel(data_int.XYZ.n580(:,1)),hampel(-data_int.XYZ.n580(:,2)),hampel(-data_int.XYZ.n580(:,3)),'.')
     title('3D flight path','FontSize',20,'Interpreter','latex')
@@ -37,6 +57,7 @@ function flight_test_plots(data_int)
     axis equal
     grid on
 
+    % ---------------------------------------------------------------------
     % lat-long position plot from n580 solution
     figure(1001)
     geoplot(data_int.PHI_PSI_H.n580(:,1),data_int.PHI_PSI_H.n580(:,2),'.r')
@@ -44,6 +65,7 @@ function flight_test_plots(data_int)
     title('GPS Position','FontSize',16,'Interpreter','latex')
     geolimits([45.328 45.3293],[-93.2314 -93.23]) % ACRC Flying Field
 
+    %----------------------------------------------------------------------
     % u,v,w states from air data
     figure(10) 
     plot(data_int.t_out,data_int.uvw(:,1),'.' ,data_int.t_out,data_int.uvw(:,2),'.', data_int.t_out, data_int.uvw(:,3),'.'); 
@@ -52,6 +74,7 @@ function flight_test_plots(data_int)
     ylabel('velocity (ft/s) - FMUR air data','FontSize',15,'Interpreter','latex'); 
     legend('u','v','w','location','eastoutside','Interpreter','latex')
 
+    % ---------------------------------------------------------------------
     % angular velocity from n580
     figure(11); 
     plot(data_int.t_out, data_int.pqr.n580(:,1),'.', data_int.t_out, data_int.pqr.n580(:,2),'.', data_int.t_out, data_int.pqr.n580(:,3),'.'); 
@@ -60,6 +83,7 @@ function flight_test_plots(data_int)
     ylabel('angular velocity (deg/s) - n580','FontSize',15,'Interpreter','latex'); 
     legend('$p$','$q$','$r$','location','eastoutside','Interpreter','latex')
     
+    % ---------------------------------------------------------------------
     % attitude from n580
     figure(12); 
     hb(1)=subplot(3,1,1);
@@ -79,6 +103,7 @@ function flight_test_plots(data_int)
     ylabel('$\psi$ (deg) - n580','FontSize',15,'Interpreter','latex'); 
     linkaxes(hb,'x')
 
+    % ---------------------------------------------------------------------
     % acceleration from n580
     figure(13); 
     plot(data_int.t_out, data_int.ax.n580,'.', data_int.t_out, data_int.ay.n580,'.', data_int.t_out, data_int.az.n580,'.'); 
@@ -87,6 +112,7 @@ function flight_test_plots(data_int)
     ylabel('acceleration $(ft/s^2)$ - n580','FontSize',15,'Interpreter','latex'); 
     legend('$x$','$y$','$z$','location','eastoutside','Interpreter','latex')
 
+    % ---------------------------------------------------------------------
     % alpha beta from probes
     figure(14)
     plot(data_int.t_out, data_int.alpha,'.', data_int.t_out, data_int.beta,'.', data_int.t_out, data_int.beta_f,'.')
@@ -95,6 +121,7 @@ function flight_test_plots(data_int)
     grid on
     legend(' $\alpha$',' $\beta$',' $\beta_f$','FontSize',20, 'Interpreter','latex','Location','southeast')
 
+    % ---------------------------------------------------------------------
     % control surface time histories
     figure(15);
     title('Control Time history')
@@ -122,10 +149,43 @@ function flight_test_plots(data_int)
     linkaxes(hc,'x')
 
 
+    %----------------------------------------------------------------------
+    % flap deflection
+    figure(16),plot(data_int.t_out,data_int.delta_f,'.'); 
+    grid on
+    xlabel('time $(s)$','Interpreter','latex','FontSize',20)
+    ylabel('$\delta_f$ $(deg)$','Interpreter','latex','FontSize',20)
+    title('Flap Time History','FontSize',20,'Interpreter','latex')
 
+    % ---------------------------------------------------------------------
+    % North-East-Down velocity
+    figure(17); hold on
+    plot(data_int.t_out,data_int.V.n580(:,1),'.'); 
+    plot(data_int.t_out,data_int.V.n580(:,2),'.'); 
+    plot(data_int.t_out,data_int.V.n580(:,3),'.'); 
+    grid on
+    xlabel('time $(s)$','Interpreter','latex','FontSize',15)
+    ylabel('V $(ft/s)$','Interpreter','latex','FontSize',15)
+    title('Inertial Velocity Time History from n580 ','FontSize',16,'Interpreter','latex')
+    legend('North','East','Down','location','northwest','Interpreter','latex')
+    hold off
+
+    % ---------------------------------------------------------------------
+    % altitude 
+    figure(18)
+    plot(data_int.t_out,data_int.altitude.n580.msl,'.'); hold on
+    plot(data_int.t_out,data_int.altitude.FMUR.p,'.');
+    ylim([600 1500])
+    grid on
+    legend('GNSS altitude (MSL)','pressure altitude','Interpreter','latex')
+    xlabel('time $(s)$','Interpreter','latex','FontSize',15)
+    ylabel('Altitude MSL $(ft)$','Interpreter','latex','FontSize',15)
+    title('Altitude MSL Time History from FMUR GPS','FontSize',16,'Interpreter','latex')
+    hold off
 
     % custom plots for Sys ID ---------------------------------------------
 
+    % ---------------------------------------------------------------------
     % alpha / q / delta_e
     figure(20); 
     ha(1)=subplot(3,1,1);
@@ -145,6 +205,7 @@ function flight_test_plots(data_int)
     ylabel('$\delta_e$ (deg)','FontSize',15,'Interpreter','latex'); 
     linkaxes(ha,'x')
 
+    % ---------------------------------------------------------------------
     % beta / p / delta_a
     figure(21); 
     hd(1)=subplot(3,1,1);
@@ -183,10 +244,12 @@ function flight_test_plots(data_int)
     ylabel('$\delta_r$ (deg)','FontSize',15,'Interpreter','latex'); 
     linkaxes(he,'x')
 
+    % ---------------------------------------------------------------------
     % n / ax / u
     figure(23); 
     hf(1)=subplot(3,1,1);
     plot(data_int.t_out,hampel(data_int.n),'.'); 
+    ylim([0 250])
     grid on; 
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$n$ (rev/s)','FontSize',15,'Interpreter','latex'); 
@@ -201,4 +264,54 @@ function flight_test_plots(data_int)
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$u$ (ft/s)','FontSize',15,'Interpreter','latex'); 
     linkaxes(hf,'x')
+
+    % ---------------------------------------------------------------------
+    if tf_save_fig == true
+        fig_vec = [101, 1001, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23];
+        fig_label = {'NED_Position_3d';
+                     'Lat_Lon_Position';
+                     'uvw_airspeeds';
+                     'Angular_Velocity';
+                     'Attitude';
+                     'Acceleration';
+                     'Alpha_Beta';
+                     'Control_Deflection';
+                     'Flap_Deflection';
+                     'Inertial_Velocity';
+                     'Altitude';
+                     'Alpha_q_Elevator';
+                     'Beta_p_Aileron';
+                     'Beta_r_Rudder';
+                     'RPM_ax_Cal_Airspeed'};
+        warning('off','all');
+        disp('-------------------------------------')
+        disp('-------- SAVE FIGURE ROUTINE --------')
+        disp('-------------------------------------')
+        disp('Input flight test date and number in the following format:')
+        disp( '  MM_DD_YYYY-X')
+        flight_date = input('->',"s");
+        
+        for ii=1:length(fig_vec)
+            figure(fig_vec(ii))
+            disp('----------------------------')
+            disp(append(string(fig_label(ii)),' Plot'))
+            disp('Zoom plot and hit enter to continue.')
+            pause
+            disp('Save current figure?')
+            save_i_fig = input('true / false: ');
+            if save_i_fig == true
+                disp('saving figure...')
+                fname = string(append(fig_label(ii),'_int_',flight_date)); 
+                if fig_vec(ii) == 1001 || fig_vec(ii) == 101
+                    saveas(gcf,fname,'png')
+                else
+                    saveas(gcf,fname,'svg')
+                    title('')
+                    saveas(gcf,fname,'epsc')
+                    saveas(gcf,fname,'png')
+                end
+            end
+            close(fig_vec(ii))
+        end
+    end
 end
