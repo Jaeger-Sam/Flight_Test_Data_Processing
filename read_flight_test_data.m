@@ -576,7 +576,7 @@ if crop_process_ftd == true
         test_data.data_n580 = process_n580_data(test_data, t_GNSS_se(1), t_GNSS_se(2), i_n580_raw_se, i_n580_filt_se);
         test_data.data_int = combine_n580_FMUR_data(test_data.data_FMUR, test_data.data_n580);
 
-        flight_test_plots(test_data.data_int)
+        %flight_test_plots(test_data.data_int)
     else
         test_data.data_n580 = [];
         test_data.data_int = [];
@@ -585,6 +585,31 @@ else
     test_data.data_FMUR = [];
     test_data.data_n580 = [];
     test_data.data_int = [];
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot data?
+disp(           'Plot data?    ')
+plt_ftd = input('true / false: ');
+if plt_ftd == true
+    if crop_process_ftd == true &&  n580tf == true
+        flight_test_plots(test_data.data_int)
+    elseif crop_process_ftd == true &&  n580tf == false
+        flight_test_plots_FMUR(test_data.FMUR,cal)
+    elseif crop_process_ftd == false &&  n580tf == false
+        disp('Select .mat data file for calibration.')
+        [cal_file,cal_floc] = uigetfile('*.mat');
+        load(append(cal_floc,'\',cal_file),'cal');
+
+        flight_test_plots_FMUR(test_data.FMUR,cal)
+    elseif crop_process_ftd == false &&  n580tf == true
+        disp('Select .mat data file for calibration.')
+        [cal_file,cal_floc] = uigetfile('*.mat');
+        load(append(cal_floc,'\',cal_file),'cal');
+
+        flight_test_plots_FMUR(test_data.FMUR,cal)
+        flight_test_plots_n580(test_data.n580)
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

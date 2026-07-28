@@ -71,10 +71,15 @@ function flight_test_plots_n580(n580,varargin)
     t_raw = 0:dt:((N_raw_plot)*dt);
     t_filt = 0:dt:((N_filt_plot)*dt);
 
+    % length(t_raw)
+    % length(n580.raw(id_s_raw:id_e_raw,10))
+    % length(t_filt)
+    % length(n580.filt(id_s_filt:id_e_filt,5))
+
     % ---------------------------------------------------------------------
     % position 3d (North-East-Down)
     figure(101)
-    plot3(hampel(n580.filt(:,6))*3.28084,hampel(-n580.filt(:,5))*3.28084,hampel(n580.filt(:,9))*3.28084,'.')
+    plot3(hampel(n580.filt(id_s_filt:id_e_filt,6))*3.28084,hampel(-n580.filt(id_s_filt:id_e_filt,5))*3.28084,hampel(n580.filt(id_s_filt:id_e_filt,9))*3.28084,'.')
     title('3D flight path','FontSize',20,'Interpreter','latex')
     xlabel('$X$ (ft)','FontSize',20,'Interpreter','latex')
     ylabel('$-Y$ (ft)','FontSize',20,'Interpreter','latex')
@@ -86,7 +91,7 @@ function flight_test_plots_n580(n580,varargin)
     % position (lat-lon)
     lat = n580.filt(id_s_filt:id_e_filt,7)*180/pi;
     lon = n580.filt(id_s_filt:id_e_filt,8)*180/pi;
-    for ii=1:length(lat)
+    for ii=1:length(lat) % logic for geoplot function
         if lat(ii) >= 90 || lat(ii) <= -90
             lat(ii) = 0;
         end
@@ -141,9 +146,23 @@ function flight_test_plots_n580(n580,varargin)
     xlabel('$t_{n580}$ $(s)$','Interpreter','latex','FontSize',15)
     ylabel('Pitch $(deg)$','Interpreter','latex','FontSize',15)
 
+    
+
+    % % attitude in body frame (rotate in z 180 deg)
+    % psi_c = n580.raw(id_s_raw:id_e_raw,5)*180/pi;
+    % psi = -psi_c + 180; % defined [0 360]
+    % for ii=1:length(psi) % convert heading between [-180 +180]
+    %     if psi(ii) > 180
+    %         psi(ii) = psi(ii) - 360;
+    %     end
+    % end
+    % psi = - psi; % backwards
+
     hg(3)=subplot(3,1,3);
     plot(t_raw,(n580.raw(id_s_raw:id_e_raw,5)*180/pi+180),'.'); grid on
     ylim([0 360])
+    % plot(t_raw,psi,'.'); grid on
+    % ylim([-180 180])
     xlabel('$t_{n580}$ $(s)$','Interpreter','latex','FontSize',15)
     ylabel('Yaw $(deg)$','Interpreter','latex','FontSize',15)
 
@@ -195,8 +214,8 @@ function flight_test_plots_n580(n580,varargin)
     % ---------------------------------------------------------------------
     % altitude 
     figure(38)
-    plot(t_filt,n580.filt(:,9)*3.28084,'.'); hold on
-    ylim([600 max(n580.filt(:,9)*3.28084)*1.2])
+    plot(t_filt,n580.filt(id_s_filt:id_e_filt,9)*3.28084,'.'); hold on
+    ylim([600 max(n580.filt(id_s_filt:id_e_filt,9)*3.28084)*1.2])
     grid on
     xlabel('$t_{n580}$ $(s)$','Interpreter','latex','FontSize',15)
     ylabel('Altitude MSL $(ft)$','Interpreter','latex','FontSize',15)

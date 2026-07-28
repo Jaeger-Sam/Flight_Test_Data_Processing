@@ -59,8 +59,16 @@ function flight_test_plots(data_int,varargin)
 
     % ---------------------------------------------------------------------
     % lat-long position plot from n580 solution
+    lat = data_int.PHI_PSI_H.n580(:,1);
+    lon = data_int.PHI_PSI_H.n580(:,2);
+    for ii=1:length(lat) % logic for geoplot function
+        if lat(ii) >= 90 || lat(ii) <= -90
+            lat(ii) = 0;
+        end
+    end
+
     figure(1001)
-    geoplot(data_int.PHI_PSI_H.n580(:,1),data_int.PHI_PSI_H.n580(:,2),'.r')
+    geoplot(lat,lon,'.r')
     geobasemap satellite
     title('GPS Position','FontSize',16,'Interpreter','latex')
     geolimits([45.328 45.3293],[-93.2314 -93.23]) % ACRC Flying Field
@@ -69,6 +77,7 @@ function flight_test_plots(data_int,varargin)
     % u,v,w states from air data
     figure(10) 
     plot(data_int.t_out,data_int.uvw(:,1),'.' ,data_int.t_out,data_int.uvw(:,2),'.', data_int.t_out, data_int.uvw(:,3),'.'); 
+    xlim([0 max(data_int.t_out)])
     grid on; 
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('velocity (ft/s) - FMUR air data','FontSize',15,'Interpreter','latex'); 
@@ -78,6 +87,7 @@ function flight_test_plots(data_int,varargin)
     % angular velocity from n580
     figure(11); 
     plot(data_int.t_out, data_int.pqr.n580(:,1),'.', data_int.t_out, data_int.pqr.n580(:,2),'.', data_int.t_out, data_int.pqr.n580(:,3),'.'); 
+    xlim([0 max(data_int.t_out)])
     grid on; 
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('angular velocity (deg/s) - n580','FontSize',15,'Interpreter','latex'); 
@@ -87,17 +97,20 @@ function flight_test_plots(data_int,varargin)
     % attitude from n580
     figure(12); 
     hb(1)=subplot(3,1,1);
-    plot(data_int.t_out,data_int.phi,'.'); 
+    plot(data_int.t_out,data_int.phi,'.');
+    xlim([0 max(data_int.t_out)])
     grid on; 
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$\phi$ (deg) - n580','FontSize',15,'Interpreter','latex'); 
     hb(2)=subplot(3,1,2);
     plot(data_int.t_out,data_int.theta,'.');
+    xlim([0 max(data_int.t_out)])
     grid on
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$\theta$ (deg) - n580','FontSize',15,'Interpreter','latex'); 
     hb(3)=subplot(3,1,3);
     plot(data_int.t_out,data_int.psi,'.'); 
+    xlim([0 max(data_int.t_out)])
     grid on
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$\psi$ (deg) - n580','FontSize',15,'Interpreter','latex'); 
@@ -107,6 +120,7 @@ function flight_test_plots(data_int,varargin)
     % acceleration from n580
     figure(13); 
     plot(data_int.t_out, data_int.ax.n580,'.', data_int.t_out, data_int.ay.n580,'.', data_int.t_out, data_int.az.n580,'.'); 
+    xlim([0 max(data_int.t_out)])
     grid on; 
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('acceleration $(ft/s^2)$ - n580','FontSize',15,'Interpreter','latex'); 
@@ -116,6 +130,7 @@ function flight_test_plots(data_int,varargin)
     % alpha beta from probes
     figure(14)
     plot(data_int.t_out, data_int.alpha,'.', data_int.t_out, data_int.beta,'.', data_int.t_out, data_int.beta_f,'.')
+    xlim([0 max(data_int.t_out)])
     xlabel('time (s)','FontSize',20,'Interpreter','latex')
     ylabel(' $\alpha$, $\beta$, $\beta_f$ (deg)','FontSize',20, 'Interpreter','latex')
     grid on
@@ -126,23 +141,31 @@ function flight_test_plots(data_int,varargin)
     figure(15);
     title('Control Time history')
     hc(1)=subplot(4,1,1);
-    plot(data_int.t_out, data_int.rpm,'.r'); ylim([0 12000])
+    plot(data_int.t_out, data_int.rpm,'.r'); 
+    ylim([0 12000])
+    xlim([0 max(data_int.t_out)])
     xlabel('time (s)','FontSize',20,'Interpreter','latex')
     ylabel('$rpm$','FontSize',20,'Interpreter','latex')
     grid on
     hc(2)=subplot(4,1,2);
-    plot(data_int.t_out, data_int.delta_e,'.r'); ylim([-30 30])
+    plot(data_int.t_out, data_int.delta_e,'.r'); 
+    ylim([-30 30])
+    xlim([0 max(data_int.t_out)])
     xlabel('time (s)','FontSize',20,'Interpreter','latex')
     ylabel('$\delta_e$ (deg)','FontSize',20,'Interpreter','latex')
     grid on
     hc(3)=subplot(4,1,3);
-    plot(data_int.t_out, data_int.delta_a_r,'.r', data_int.t_out, data_int.delta_a_l,'.b', data_int.t_out, data_int.delta_a,'.g'); ylim([-30 30])
+    plot(data_int.t_out, data_int.delta_a_r,'.r', data_int.t_out, data_int.delta_a_l,'.b', data_int.t_out, data_int.delta_a,'.g'); 
+    ylim([-30 30])
+    xlim([0 max(data_int.t_out)])
     xlabel('time (s)','FontSize',20,'Interpreter','latex')
     ylabel('$\delta_a$ (deg)','FontSize',20,'Interpreter','latex')
     legend('right','left','avg')
     grid on
     hc(4)=subplot(4,1,4);
-    plot(data_int.t_out, data_int.delta_r,'.r'); ylim([-30 30])
+    plot(data_int.t_out, data_int.delta_r,'.r'); 
+    ylim([-30 30])
+    xlim([0 max(data_int.t_out)])
     xlabel('time (s)','FontSize',20,'Interpreter','latex')
     ylabel('$\delta_r$ (deg)','FontSize',20,'Interpreter','latex')
     grid on
@@ -152,6 +175,7 @@ function flight_test_plots(data_int,varargin)
     %----------------------------------------------------------------------
     % flap deflection
     figure(16),plot(data_int.t_out,data_int.delta_f,'.'); 
+    xlim([0 max(data_int.t_out)])
     grid on
     xlabel('time $(s)$','Interpreter','latex','FontSize',20)
     ylabel('$\delta_f$ $(deg)$','Interpreter','latex','FontSize',20)
@@ -163,6 +187,7 @@ function flight_test_plots(data_int,varargin)
     plot(data_int.t_out,data_int.V.n580(:,1),'.'); 
     plot(data_int.t_out,data_int.V.n580(:,2),'.'); 
     plot(data_int.t_out,data_int.V.n580(:,3),'.'); 
+    xlim([0 max(data_int.t_out)])
     grid on
     xlabel('time $(s)$','Interpreter','latex','FontSize',15)
     ylabel('V $(ft/s)$','Interpreter','latex','FontSize',15)
@@ -176,6 +201,7 @@ function flight_test_plots(data_int,varargin)
     plot(data_int.t_out,data_int.altitude.n580.msl,'.'); hold on
     plot(data_int.t_out,data_int.altitude.FMUR.p,'.');
     ylim([600 1500])
+    xlim([0 max(data_int.t_out)])
     grid on
     legend('GNSS altitude (MSL)','pressure altitude','Interpreter','latex')
     xlabel('time $(s)$','Interpreter','latex','FontSize',15)
@@ -190,16 +216,19 @@ function flight_test_plots(data_int,varargin)
     figure(20); 
     ha(1)=subplot(3,1,1);
     plot(data_int.t_out,data_int.alpha,'.'); 
+    xlim([0 max(data_int.t_out)])
     grid on; 
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$\alpha$ (deg)','FontSize',15,'Interpreter','latex'); 
     ha(2)=subplot(3,1,2);
     plot(data_int.t_out,data_int.pqr.n580(:,2),'.');
+    xlim([0 max(data_int.t_out)])
     grid on
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$q$ $(\deg/s)$ - n580','FontSize',15,'Interpreter','latex'); 
     ha(3)=subplot(3,1,3);
     plot(data_int.t_out,data_int.delta_e,'.'); 
+    xlim([0 max(data_int.t_out)])
     grid on
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$\delta_e$ (deg)','FontSize',15,'Interpreter','latex'); 
@@ -210,16 +239,19 @@ function flight_test_plots(data_int,varargin)
     figure(21); 
     hd(1)=subplot(3,1,1);
     plot(data_int.t_out,data_int.beta,'.'); 
+    xlim([0 max(data_int.t_out)])
     grid on; 
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$\beta$ (deg)','FontSize',15,'Interpreter','latex'); 
     hd(2)=subplot(3,1,2);
     plot(data_int.t_out,data_int.pqr.n580(:,1),'.');
+    xlim([0 max(data_int.t_out)])
     grid on
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$p$ $(\deg/s)$ - n580','FontSize',15,'Interpreter','latex'); 
     hd(3)=subplot(3,1,3);
     plot(data_int.t_out,data_int.delta_a,'.'); 
+    xlim([0 max(data_int.t_out)])
     grid on
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$\delta_a$ (deg)','FontSize',15,'Interpreter','latex'); 
@@ -229,16 +261,19 @@ function flight_test_plots(data_int,varargin)
     figure(22); 
     he(1)=subplot(3,1,1);
     plot(data_int.t_out,data_int.beta,'.'); 
+    xlim([0 max(data_int.t_out)])
     grid on; 
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$\beta$ (deg)','FontSize',15,'Interpreter','latex'); 
     he(2)=subplot(3,1,2);
     plot(data_int.t_out,data_int.pqr.n580(:,3),'.');
+    xlim([0 max(data_int.t_out)])
     grid on
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$r$ $(\deg/s)$ - n580','FontSize',15,'Interpreter','latex'); 
     he(3)=subplot(3,1,3);
     plot(data_int.t_out,data_int.delta_r,'.'); 
+    xlim([0 max(data_int.t_out)])
     grid on
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$\delta_r$ (deg)','FontSize',15,'Interpreter','latex'); 
@@ -249,17 +284,20 @@ function flight_test_plots(data_int,varargin)
     figure(23); 
     hf(1)=subplot(3,1,1);
     plot(data_int.t_out,hampel(data_int.n),'.'); 
+    xlim([0 max(data_int.t_out)])
     ylim([0 250])
     grid on; 
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$n$ (rev/s)','FontSize',15,'Interpreter','latex'); 
     hf(2)=subplot(3,1,2);
     plot(data_int.t_out,data_int.ax.n580,'.');
+    xlim([0 max(data_int.t_out)])
     grid on
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$a_x$ $(ft/s^2)$ - n580','FontSize',15,'Interpreter','latex'); 
     hf(3)=subplot(3,1,3);
     plot(data_int.t_out,data_int.uvw(:,1),'.'); 
+    xlim([0 max(data_int.t_out)])
     grid on
     xlabel('time (s)','FontSize',15,'Interpreter','latex'); 
     ylabel('$u$ (ft/s)','FontSize',15,'Interpreter','latex'); 
