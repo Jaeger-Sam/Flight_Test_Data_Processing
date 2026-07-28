@@ -19,8 +19,12 @@
 %   altimeter: altimeter setting for the day (in Hg)
 %   temperature: ambient temperature for flight test (F)
 %
-% OUTPUTS:
-%
+% OUTPUTS: (none) 
+%   saves a .mat file with the "maneuver_label" filename with the following
+%   variables...
+%       data_FMUR -> output from process_FMUR_data.fcn
+%       data_n580 -> output from process_n580_data.fcn
+%       data_int -> combine_n580_FMUR_data
 % 
 % Sam Jaeger
 % jaege246@umn.edu

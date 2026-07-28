@@ -1,4 +1,6 @@
-% flight_test_plots_n580.fcn plots the raw n580 data from a data structure.
+% flight_test_plots_n580.fcn plots the raw n580 data from the raw n580 data
+% structure. Routine will ask user to save the generated figures as .png,
+% .svg, and .eps file formats.
 %
 % flight_test_plots_n580(n580,tf_save_fig,i_n580_raw_se,i_n580_filt_se)
 %
@@ -140,7 +142,7 @@ function flight_test_plots_n580(n580,varargin)
     ylabel('Pitch $(deg)$','Interpreter','latex','FontSize',15)
 
     hg(3)=subplot(3,1,3);
-    plot(t_raw,-n580.raw(id_s_raw:id_e_raw,5)*180/pi+180,'.'); grid on
+    plot(t_raw,(n580.raw(id_s_raw:id_e_raw,5)*180/pi+180),'.'); grid on
     ylim([0 360])
     xlabel('$t_{n580}$ $(s)$','Interpreter','latex','FontSize',15)
     ylabel('Yaw $(deg)$','Interpreter','latex','FontSize',15)

@@ -56,6 +56,8 @@ function data_n580 = process_n580_data(test_data, t_GNSS_start, t_GNSS_end, vara
     
         [~,id_s_filt] = min(abs(test_data.n580.filt(:,2) - t_GNSS_start));
         [~,id_e_filt] = min(abs(test_data.n580.filt(:,2) - t_GNSS_end));
+    elseif nargin ==4
+        error('Must supply raw and filtered starting and ending indices.')
     else
         i_n580_raw_se = varargin{1};
         i_n580_filt_se = varargin{2};
@@ -90,6 +92,7 @@ function data_n580 = process_n580_data(test_data, t_GNSS_start, t_GNSS_end, vara
             data_n580.psi(ii) = data_n580.psi(ii) - 360;
         end
     end
+    data_n580.psi = - data_n580.psi; % backwards
 
     % gyro readings
     %   x and z flipped, x negative

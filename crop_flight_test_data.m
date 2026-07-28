@@ -1,5 +1,28 @@
-% crop_flight_test_data.fcn finds the time indicies from the test_data
-% structure from read_flight_test_data.fcn.
+% crop_flight_test_data.fcn crops the "test_data" data structure from 
+% read_flight_test_data.fcn by returning GNSS timestamps as well as 
+% FMUR and n580 indices. Will ask user to either crop manually or 
+% automatically crop the data based on when a GPS lock is obtained. The 
+% manual cropping mode will ask the user which of the following plots to 
+% look at...
+%       altitude_MSL ================ 0
+%       Inertial_Velocity =========== 1
+%       roll / pitch / yaw (n580) === 2
+%       a_{xyz} (n580 filt.) ======== 3
+%       omega_{xyz} (n580 filt.) ==== 4
+%       rpm ========================= 5
+%       delta_e / delta_a / delta_r = 6
+%       delta_f ===================== 7
+%       DELTA_p / p_static ========== 8
+%       north / east position (n580)= 9
+%       alpha / q / delta_e ========= 10
+%       beta / p / delta_a ========== 11
+%       beta / r / delta_r ========== 12
+%       rpm / a_x / Delta_p ========= 13
+% The manual routine will tell the user to zoom the selected plot (plots
+% with multiple variables are linked on the x-axis) before starting the 
+% data picker routine. The program will ask the user to select two
+% sequential points on the plot and then label the maneuver. Then the
+% routine will ask to add another maneuver and crop the data.
 %
 % [t_GNSS_se,i_FMUR_se, i_n580_raw_se,i_n580_filt_se,maneuver_label] = crop_flight_test_data(test_data)
 %
@@ -7,8 +30,8 @@
 %   test_data: data structure from read_flight_test_data.fcn
 %
 % OPTIONAL INPUTS:
-%   crop_data_man_tf: true / false to crop data manually. Otherwise will
-%       ask for user input.
+%   crop_data_man_tf: true / false to crop data manually based on time 
+%       histories. Will ask for user if this input argument ins't used.
 %
 % OUTPUTS:
 %   t_GNSS_se: matrix of GNSS times for the cropping data. 
@@ -140,7 +163,7 @@ function [t_GNSS_se,i_FMUR_se, i_n580_raw_se,i_n580_filt_se,maneuver_label] = cr
             [~,i_FMUR_s] = min(abs(test_data.FMUR.sys.time_gnss_s - t_GNSS_start));
             [~,i_FMUR_e] = min(abs(test_data.FMUR.sys.time_gnss_s - t_GNSS_end));
 
-        elseif crop_var==2 % roll / pitch / yaw from n580
+        elseif crop_var==2 % roll / pitch / yaw from n580 in body frame
             figure(1); hold on
             ha(1)=subplot(3,1,1);
             plot(-test_data.n580.raw(:,7)*180/pi,'.');
@@ -156,7 +179,7 @@ function [t_GNSS_se,i_FMUR_se, i_n580_raw_se,i_n580_filt_se,maneuver_label] = cr
             ylabel('Pitch $(deg)$','Interpreter','latex','FontSize',15)
 
             ha(3)=subplot(3,1,3);
-            plot(-test_data.n580.raw(:,5)*180/pi+180,'.'); grid on
+            plot(test_data.n580.raw(:,5)*180/pi+180,'.'); grid on
             xlabel('timestep, $k$','Interpreter','latex','FontSize',15)
             ylabel('Yaw $(deg)$','Interpreter','latex','FontSize',15)
     

@@ -2,8 +2,8 @@
 % mat_converter function of the FMU-R. Additionally, the function reads in
 % csv data files from the Honeywell n580 if the user request. The script 
 % will ask for the file location of all of the needed files. Documentation
-% on all of FMU-R data can be found here: 
-% https://github.com/bolderflight/spaaro
+% for the FMU-R  can be found here: https://github.com/bolderflight/spaaro
+% Will ask the user to also crop, process, and save the data structure.
 %
 % test_data = read_flight_test_data  
 %
