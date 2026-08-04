@@ -715,7 +715,7 @@ function [t_GNSS_se,i_FMUR_se, i_n580_raw_se,i_n580_filt_se,maneuver_label] = cr
                 disp(append('N_FMUR = ',num2str(N_FMUR)))
                 disp(append('N_n580 = ',num2str(N_raw)))
                 warning('N_FMUR > N_n580. FMUR and n580 data do not align.')
-                i_FMUR_e = i_FMUR_s + N_raw -1;
+                %i_FMUR_e = i_FMUR_s + N_raw -1;
             end
 
             disp(append('Cropped maneuver jj = ',num2str(jj)))

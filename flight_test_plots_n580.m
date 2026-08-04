@@ -60,6 +60,7 @@ function flight_test_plots_n580(n580,varargin)
         tf_save_fig = varargin{1};
         i_n580_raw_se = varargin{2};
         i_n580_filt_se = varargin{3};
+        
         id_s_raw = i_n580_raw_se(1);
         id_e_raw = i_n580_raw_se(2);
         id_s_filt = i_n580_filt_se(1);

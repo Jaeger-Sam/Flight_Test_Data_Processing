@@ -46,8 +46,8 @@ data_n580 = test_data.data_n580;
 data_FMUR = test_data.data_FMUR;
 %%
 %t = data_int.t_out;
-%t = data_FMUR.t_out;
-t = data_n580.t_raw;
+t = data_FMUR.t_out;
+%t = data_n580.t_raw;
   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Check Attitude 
@@ -101,6 +101,27 @@ delta_r = LP_15smooth( hampel( data_FMUR.delta_r ) );
 delta_f_r = LP_15smooth( hampel( data_FMUR.delta_f_r) );
 delta_f_l = LP_15smooth( hampel( data_FMUR.delta_f_l ) );
 delta_f = (delta_f_r + delta_f_l)/2;
+
+% delta_e = Opt_LP(data_FMUR.delta_e,2,0.01,true);
+% delta_a = Opt_LP(data_FMUR.delta_a,2,0.01,true);
+% delta_a_r = Opt_LP(data_FMUR.delta_a_r,1,0.01,true);
+% delta_a_l = Opt_LP(data_FMUR.delta_a_l,1,0.01,true);
+% delta_r = Opt_LP(data_FMUR.delta_r,2,0.01,true);
+
+
+% logic for flaps having the ultra noisy measurements from the EMI
+for ii=1:length(delta_f)
+    if delta_f(ii) > 7 && delta_f(ii) < 18
+        delta_f(ii) = 15;
+    elseif delta_f(ii) > 18
+        delta_f(ii) = 30;
+    else
+        delta_f(ii) = 0;
+    end
+end
+delta_f = hampel(delta_f,10);
+
+
 
 figure(15);
 title('Control Time history')
@@ -194,18 +215,18 @@ grid on
 
 %% animation
 
-% N_start = 2*60*100; % index to start animation
-% N_end = 3*60*100; % index to stop animation
-N_start = 1;
-N_end = length(t);
+N_start = 3.5*60*100; % index to start animation
+N_end = 4.5*60*100; % index to stop animation
+%N_start = 1;
+%N_end = length(t);
 
 % change path to C:\Users\Sam\ on desktop
 % change path to C:\Users\jaege\ on laptop
 model_info_file = 'C:\Users\Sam\MATLAB Drive\tools\3d_animations_MATLAB\3d_models\IBIS.mat';
 frame_sample_time = 0.01;
 speedx = 1; 
-isave_movie = 0;
-movie_file_name = 'IBIS_flight1_7_9_26.mp4';
+isave_movie = 1;
+movie_file_name = 'IBIS_flight4_sturns_7_9_26.mp4';
 
 % maximum control surface deflection
 delta_a_max = 20; % [deg]
@@ -217,8 +238,10 @@ controls_deflection_deg = [N_deflect*delta_e(N_start:N_end), ...
             N_deflect*delta_a(N_start:N_end), ...
             N_deflect*delta_a(N_start:N_end), ...
             -N_deflect*delta_r(N_start:N_end), ...
-            delta_f_l(N_start:N_end),...
-            delta_f_r(N_start:N_end)]; % for IBIS model
+            delta_f(N_start:N_end),...
+            delta_f(N_start:N_end)]; % for IBIS model
+%             delta_f_l(N_start:N_end),...
+%             delta_f_r(N_start:N_end)]; % for IBIS model
 
 aircraft_3d_animation(model_info_file,...
     psi(N_start:N_end), ...            Heading angle [deg]

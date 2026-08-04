@@ -10,7 +10,8 @@
 % OPTIONAL INPUTS:
 %   i_FMUR_se: starting and ending index of FMUR data
 %   plt_synced_response: true / false to plot synced time response.
-%   t_buffer: 2 element vector of buffer times in seconds
+%   t_buffer: 2 element vector of buffer times in seconds (must be
+%       positive integer).
 %
 % OUTPUTS:
 %   D: integer index of the time delay of the n580 from the FMU-R.
@@ -66,8 +67,8 @@ function [D, i_FMUR_se, i_n580_raw_se,i_n580_filt_se] = align_gyro_thist(test_da
 
         % add buffer on either side of the FMU-R data crop
         t_buffer = varargin{3};
-        id_s_raw = i_FMUR_s - round(t_buffer(1))*100; 
-        id_e_raw = i_FMUR_e + round(t_buffer(2))*100;
+        id_s_raw = i_FMUR_s - round(abs(t_buffer(1)))*100; 
+        id_e_raw = i_FMUR_e + round(abs(t_buffer(2)))*100;
 
         plt_synced_response = varargin{2};
 
@@ -86,7 +87,7 @@ function [D, i_FMUR_se, i_n580_raw_se,i_n580_filt_se] = align_gyro_thist(test_da
     q_F = -test_data.FMUR.imu.gyro_radps(i_FMUR_s:i_FMUR_e,2)*180/pi;
     r_F = -test_data.FMUR.imu.gyro_radps(i_FMUR_s:i_FMUR_e,3)*180/pi;
 
-    figure,plot(q_F,'*'); hold on; plot(q_n,'.')
+    %figure,plot(q_F,'*'); hold on; plot(q_n,'.')
 
     % align gyro data
     [p_Fa,p_na,D_p] = alignsignals(p_F,p_n, Method='xcorr');

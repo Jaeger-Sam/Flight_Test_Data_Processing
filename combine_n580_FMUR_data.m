@@ -67,8 +67,8 @@ function data_int = combine_n580_FMUR_data(data_FMUR,data_n580)
     data_int.beta_dot = data_FMUR.beta_dot;
 
     % time
-    %data_int.t_out = data_FMUR.t_out;
-    data_int.t_out = data_n580.t_filt; % use n580 GPS time for everything
+    data_int.t_out = data_FMUR.t_out;
+    %data_int.t_out = data_n580.t_filt; % use n580 GPS time for everything
 
     % X_out (state vector)
     data_int.X_out = [];
