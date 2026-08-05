@@ -36,5 +36,4 @@ function H_rho = dense_alt(p, T, lam_p, b_p)
     if isempty(i_strato) == false
         H_rho(i_strato) = log(sigma(i_strato)./0.297075)./(-4.80637*10^(-5)) + 36089.24;
     end
-    
 end

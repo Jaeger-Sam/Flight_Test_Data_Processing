@@ -26,13 +26,9 @@ function H = press_altimeter(p, altimeter, lam_p, b_p)
     delta = p_true/p_SL;
 
     H = (1 - delta.^(1/5.2559))/(6.87559*10^(-6));
-    
+
     i_strato = H(H > 36089.24); % find indices in the stratosphere
     if isempty(i_strato) == false
         H(i_strato) = log(delta(i_strato)./0.223360)./(-4.80637*10^(-5)) + 36089.24;
     end
-    % if H > 36089.24
-    %     H = log(delta./0.223360)./(-4.80637*10^(-5)) + 36089.24;
-    %     %error('Pressure altitude in stratosphere or above!') 
-    % end
 end

@@ -31,9 +31,4 @@ function H_c = press_alt(p, lam_p, b_p)
     if isempty(i_strato) == false
         H_c(i_strato) = log(delta(i_strato)./0.223360)./(-4.80637*10^(-5)) + 36089.24;
     end
-
-    % if H_c > 36089.24
-    %     H_c = log(delta./0.223360)./(-4.80637*10^(-5)) + 36089.24;
-    %     %error('Pressure altitude in stratosphere or above!') 
-    % end
 end
