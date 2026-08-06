@@ -1,12 +1,17 @@
-% generate_aero_force_coef.fcn calculates the 
+% generate_aero_force_coef.fcn calculates the aerodynamic force 
+% coefficients from accelertaion, air data, thrust time histories as well 
+% as aircraft information. This includes lift, drag, and side force
+% coefficients in the stability axes as well as body fixed coefficients.
+%
+% [C_s, C_b] = generate_aero_force_coef(ax, ay, az, u_inf, alpha, beta, T, rho_inf, W, Sw, b_a_xyz, plt_thist)
 %
 % INPUTS:
 %   a_x: Nx1 vector of x accelerations from the IMU (ft/s^2)
 %   a_y: Nx1 vector of y accelerations from the IMU (ft/s^2)
 %   a_z: Nx1 vector of z accelerations from the IMU (ft/s^2)
 %   u_inf: Nx1 vector of freestream airspeed (ft/s)
-%   alpha: Nx1 vector of angle of attacks (rad)
-%   beta: Nx1 vector of angle of sideslips (rad)
+%   alpha: Nx1 vector of angle of attacks (deg)
+%   beta: Nx1 vector of angle of sideslips (deg)
 %   T: Nx1 vector of thrust (lb)
 %   rho_inf: freestream air density (slugs/ft^3)
 %   W: weight of aircraft (lb)
@@ -40,6 +45,8 @@ function [C_s, C_b] = generate_aero_force_coef(ax, ay, az, u_inf, alpha, beta, T
     end
     g = 32.174;
     m = W/g;
+    alpha = alpha*pi/180; % convert to rad
+    beta = beta*pi/180;
     
     C_b = zeros(N,3);
     C_s = zeros(N,3);
@@ -56,17 +63,18 @@ function [C_s, C_b] = generate_aero_force_coef(ax, ay, az, u_inf, alpha, beta, T
 
     if plt_thist == true
         figure(910)
-        subplot(3,1,1)
+        h(1)=subplot(3,1,1);
         plot(C_s(:,1),'.'); grid on;
         xlabel('timestep','FontSize',15,'Interpreter','latex')
         ylabel('$C_D$','FontSize',15,'Interpreter','latex')
-        subplot(3,1,2)
+        h(2)=subplot(3,1,2);
         plot(C_s(:,2),'.'); grid on;
         xlabel('timestep','FontSize',15,'Interpreter','latex')
         ylabel('$C_{Y_w}$','FontSize',15,'Interpreter','latex')
-        subplot(3,1,3)
+        h(3)=subplot(3,1,3);
         plot(C_s(:,3),'.'); grid on;
         xlabel('timestep','FontSize',15,'Interpreter','latex')
         ylabel('$C_{L}$','FontSize',15,'Interpreter','latex')
+        linkaxes(h,'x');
     end
 end
