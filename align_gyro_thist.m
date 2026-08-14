@@ -1,8 +1,10 @@
 % align_gyro_thist.fcn attempts to time sync the n580 to the FMU-R data 
 % based on gyro responses. This is done to avoid using GPS time tagging. 
-% This function relies on the built in "alignsignals.fcn" in MATLAB.
+% This function relies on the built in "alignsignals.fcn" in MATLAB. This
+% function will attempt to align "filtered" and "raw" n580 data by syncing
+% to the ending timestep of the raw GPS time tag from the n580.
 %
-% [D, i_FMUR_se, i_n580_raw_se,i_n580_filt_se] = align_gyro_thist(test_data, i_FMUR_se, plt_synced_response, t_buffer)
+% [D, i_FMUR_se, i_n580_raw_se,i_n580_filt_se] = align_gyro_thist(test_data, i_FMUR_se, plt_synced_response, t_buffer, sync_axis)
 %
 % INPUTS:
 %   test_data: data structure from flight test
@@ -12,6 +14,7 @@
 %   plt_synced_response: true / false to plot synced time response.
 %   t_buffer: 2 element vector of buffer times in seconds (must be
 %       positive integer).
+%   sync_axis: integer of 1,2, or 3 to select p,q, or r to sync to.
 %
 % OUTPUTS:
 %   D: integer index of the time delay of the n580 from the FMU-R.
@@ -31,7 +34,7 @@
 
 function [D, i_FMUR_se, i_n580_raw_se,i_n580_filt_se] = align_gyro_thist(test_data,varargin)
     
-    narginchk(1,4)
+    narginchk(1,5)
     if nargin == 1 % no starting and ending index
         i_FMUR_s = 1;
         i_FMUR_e = length(test_data.FMUR.adc_volt(:,1));
@@ -40,6 +43,7 @@ function [D, i_FMUR_se, i_n580_raw_se,i_n580_filt_se] = align_gyro_thist(test_da
         id_e_raw = length(test_data.n580.raw(:,1));
 
         plt_synced_response = true;
+        sync_axis = 0;
     elseif nargin == 2 % FMUR starting index is provided
         i_FMUR_se = varargin{1};
         i_FMUR_s = i_FMUR_se(1);
@@ -50,6 +54,7 @@ function [D, i_FMUR_se, i_n580_raw_se,i_n580_filt_se] = align_gyro_thist(test_da
         id_e_raw = i_FMUR_e + 5*100;
         
         plt_synced_response = true;
+        sync_axis = 0;
     elseif nargin == 3 % FMUR starting index is provided and plot sync
         i_FMUR_se = varargin{1};
         i_FMUR_s = i_FMUR_se(1);
@@ -60,6 +65,7 @@ function [D, i_FMUR_se, i_n580_raw_se,i_n580_filt_se] = align_gyro_thist(test_da
         id_e_raw = i_FMUR_e + 5*100;
 
         plt_synced_response = varargin{2};
+        sync_axis = 0;
     elseif nargin == 4 % FMUR starting index is provided, plot sync, and buffer time
         i_FMUR_se = varargin{1};
         i_FMUR_s = i_FMUR_se(1);
@@ -71,7 +77,20 @@ function [D, i_FMUR_se, i_n580_raw_se,i_n580_filt_se] = align_gyro_thist(test_da
         id_e_raw = i_FMUR_e + round(abs(t_buffer(2)))*100;
 
         plt_synced_response = varargin{2};
+        sync_axis = 0;
+    elseif nargin ==5 % set which axis to sync
+        i_FMUR_se = varargin{1};
+        i_FMUR_s = i_FMUR_se(1);
+        i_FMUR_e = i_FMUR_se(2);
 
+        % add buffer on either side of the FMU-R data crop
+        t_buffer = varargin{3};
+        id_s_raw = i_FMUR_s - round(abs(t_buffer(1)))*100; 
+        id_e_raw = i_FMUR_e + round(abs(t_buffer(2)))*100;
+
+        plt_synced_response = varargin{2};
+
+        sync_axis = varargin{4};
     end
 
 
@@ -111,18 +130,38 @@ function [D, i_FMUR_se, i_n580_raw_se,i_n580_filt_se] = align_gyro_thist(test_da
         disp('N_q & N_r match.')
         D = D_q;
     else % none match
-        disp('no delays match, taking rounded average.')
-        D  = round(mean([D_p, D_q, D_r]));
+        if sync_axis == 1
+            disp('user override, taking p delay.')
+        elseif sync_axis == 2
+            disp('user override, taking q delay.')
+        elseif sync_axis == 3
+            disp('user override, taking r delay.')
+        else
+            disp('no delays match, taking rounded average.')
+            D  = round(mean([D_p, D_q, D_r]));
+        end
+    end
+    if sync_axis == 1
+        disp('user override, taking p delay.')
+        D = D_p;
+    elseif sync_axis == 2
+        disp('user override, taking q delay.')
+        D = D_q;
+    elseif sync_axis == 3
+        disp('user override, taking r delay.')
+        D = D_r;
     end
 
     % set indices
     if D > 0 % n580 ahead of FMU-R
-        i_FMUR_s = i_FMUR_s - D;
-        i_FMUR_e = i_FMUR_e - D;
+        % i_FMUR_s = i_FMUR_s - D;
+        % i_FMUR_e = i_FMUR_e - D;
+        %i_n580_raw_se = [id_s_raw (id_s_raw + (N_FMUR-1))];
         
         N_FMUR = i_FMUR_e - i_FMUR_s + 1;
-        i_n580_raw_se = [id_s_raw (id_s_raw + (N_FMUR-1))];
+        i_n580_raw_se = [id_s_raw+D (id_s_raw + D + (N_FMUR-1))];
 
+        % n580 filtered to raw 
         t_GNSS_start = test_data.n580.raw(i_n580_raw_se(1),2);
         t_GNSS_end = test_data.n580.raw(i_n580_raw_se(2),2);
 
@@ -141,7 +180,7 @@ function [D, i_FMUR_se, i_n580_raw_se,i_n580_filt_se] = align_gyro_thist(test_da
         N_raw = i_n580_raw_se(2) - i_n580_raw_se(1) + 1;
         if N_filt > N_raw
             %id_e_filt = id_s_filt + N_raw - 1;
-            id_s_filt = id_e_filt - N_raw + 1;
+            id_s_filt = id_e_filt - N_raw + 1; % sync to end time
             disp(append('N_filt = ',num2str(N_filt)))
             disp(append('N_raw = ',num2str(N_raw)))
             warning('n580 N_raw < N_filt')
@@ -154,6 +193,7 @@ function [D, i_FMUR_se, i_n580_raw_se,i_n580_filt_se] = align_gyro_thist(test_da
         i_n580_raw_se = [id_s_raw+D (id_s_raw + D + (N_FMUR-1))];
         %N_raw = i_n580_raw_se(2) - i_n580_raw_se(1) + 1;
 
+        % n580 filtered to raw 
         t_GNSS_start = test_data.n580.raw(i_n580_raw_se(1),2);
         t_GNSS_end = test_data.n580.raw(i_n580_raw_se(2),2);
 
@@ -172,7 +212,7 @@ function [D, i_FMUR_se, i_n580_raw_se,i_n580_filt_se] = align_gyro_thist(test_da
         N_raw = i_n580_raw_se(2) - i_n580_raw_se(1) + 1;
         if N_filt > N_raw
             %id_e_filt = id_s_filt + N_raw - 1;
-            id_s_filt = id_e_filt - N_raw + 1;
+            id_s_filt = id_e_filt - N_raw + 1; % sync to end time
             disp(append('N_filt = ',num2str(N_filt)))
             disp(append('N_raw = ',num2str(N_raw)))
             warning('n580 N_raw < N_filt')
@@ -185,7 +225,6 @@ function [D, i_FMUR_se, i_n580_raw_se,i_n580_filt_se] = align_gyro_thist(test_da
         i_n580_filt_se = [];
     end
 
-   
     % plot synced gyro data
     if plt_synced_response == true
         if ishandle(31)

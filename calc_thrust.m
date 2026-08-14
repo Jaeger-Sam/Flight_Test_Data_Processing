@@ -55,11 +55,11 @@ function [T,CT,J] = calc_thrust(rpm,u_inf,alpha,beta,rho_inf,p_CT,d,varargin)
     CT = polyval(p_CT,J);
     T = rho_inf.*(n.^2).*(d.^4).*CT;
     if plt_thrust == true
-        figure(920)
+        figure(920); hold on
         h(1)=subplot(3,1,1);
         plot(T,'.'); grid on;
         xlabel('timestep','FontSize',15,'Interpreter','latex')
-        ylabel('$T$','FontSize',15,'Interpreter','latex')
+        ylabel('$T$ $(lb)$','FontSize',15,'Interpreter','latex')
         h(2)=subplot(3,1,2);
         plot(CT,'.'); grid on;
         xlabel('timestep','FontSize',15,'Interpreter','latex')

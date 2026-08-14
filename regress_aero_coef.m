@@ -1,9 +1,10 @@
 % regress_aero_coef.fcn performs ordinary-least-squares regression or
 % total-least-squares regression for a given set of terms. Covariance is
 % estimated based on the residuals of the parameter fit. See Chapter 6 in
-% "Flight Vehicle System ID" by Jategaonkar.
+% "Flight Vehicle System ID" by Jategaonkar and also Chapter 5 of "Aircraft
+% System Identification" by Morelli. All parameter estimates are in rad.
 %
-% [theta_hat, P_est, C_i_est, Jc_opt, param_legend] = regress_aero_coef(C_i, param, u_inf, alpha, beta, delta_e, delta_a, delta_r, delta_f, p, q, r, varargin)
+% [theta_hat, P_est, C_i_est, Jc_opt, param_legend,PSE,R2,C_num,VIF] = regress_aero_coef(C_i, param, u_inf, alpha, beta, delta_e, delta_a, delta_r, delta_f, p, q, r, varargin)
 % 
 % INPUTS:
 %   C_i: Nx1 vector of time history of aerodynamic coefficient
@@ -35,47 +36,164 @@
 %   TLS_tf: true/false to use total-least-squares
 %   nondim_unsteday_regress: true/false to nondimensionalize the unsteady
 %       regressors
+%   c_b_w: mean aerodynamic chord for nondimensional unsteady regressors
+%   b_w: wingspan for nondimensional unsteady regressors
+%   filt_regressors: true / false to filter regressors via 15 point simpson
+%       filter.
+%   stand_regressors: true / false to transform regression problem into a
+%       nondimensional form.
+%   i_maneuver: index of different maneuvers to plot
+%   maneuver_label: string of maneuver labels to add to plot
 %
 % OUTPUTS:
 %   theta_hat: estimated parameters
-%   P_est: estimated covariance
+%   P_est: estimated covariance matrix
 %   C_i_est: estimated coefficient time history
-%   Jc_opt: cost function or residual
+%   Jc_opt: cost function or residual 
 %   param_legend: string of parameters that were fitted
+%
+% OPTIONAL OUTPUTS:
+%   PSE: Predicted Square Error (Eqn 5.115 in Morelli)
+%         small number indicates a good fit without overfitting parameters.
+%   R2: Coefficient of determination (Eqn. 5.31 in Morelli) 
+%         value close to 1 indicates a good fit.
+%   C_num: Condition number of regressor matrix (Eqn. 5.174 in Morelli)
+%          value greater than 100 indicates collinearity and inverse of 
+%          H'*H may not exist.
+%   VIF: Vector of variance inflation factors (Eqn 5.168 in Morelli) 
+%       if value >10 points to collinearity in regressor.
+%   U: Theil's Inequality Coefficient (Eqn 11.5 in Jategaonkar)
+%       value close to 0 indicates a good fit.
 %
 % Sam Jaeger
 % jaege246@umn.edu
 % 8/6/2026
 
-function [theta_hat, P_est, C_i_est, Jc_opt, param_legend] = regress_aero_coef(C_i, param, u_inf, alpha, beta, delta_e, delta_a, delta_r, delta_f, p, q, r, varargin)
+function [theta_hat, P_est, C_i_est, Jc_opt, param_legend,varargout] = regress_aero_coef(C_i, param, u_inf, alpha, beta, delta_e, delta_a, delta_r, delta_f, p, q, r, varargin)
     
     % variable argument logic----------------------------------------------
-    narginchk(12,16)
+    narginchk(12,22)
     if nargin == 13
         param_fix = varargin{1};
         plt_fit = false;
         TLS_tf = false;
         nondim_unsteday_regress = false;
+        c_b_w = [];
+        b_w = [];
+        filt_regressors = false;
+        stand_regressors = false;
+        i_maneuver = [];
+        maneuver_label = [];
     elseif nargin == 14
         param_fix = varargin{1};
         plt_fit = varargin{2};
         TLS_tf = false;
         nondim_unsteday_regress = false;
+        c_b_w = [];
+        b_w = [];
+        filt_regressors = false;
+        stand_regressors = false;
+        i_maneuver = [];
+        maneuver_label = [];
     elseif nargin == 15
         param_fix = varargin{1};
         plt_fit = varargin{2};
         TLS_tf = varargin{3};
         nondim_unsteday_regress = false;
+        c_b_w = [];
+        b_w = [];
+        filt_regressors = false;
+        stand_regressors = false;
+        i_maneuver = [];
+        maneuver_label = [];
     elseif nargin == 16
         param_fix = varargin{1};
         plt_fit = varargin{2};
         TLS_tf = varargin{3};
         nondim_unsteday_regress = varargin{4};
+        c_b_w = [];
+        b_w = [];
+        filt_regressors = false;
+        stand_regressors = false;
+        i_maneuver = [];
+        maneuver_label = [];
+    elseif nargin == 17
+        param_fix = varargin{1};
+        plt_fit = varargin{2};
+        TLS_tf = varargin{3};
+        nondim_unsteday_regress = varargin{4};
+        c_b_w = varargin{5};
+        b_w = [];
+        filt_regressors = false;
+        stand_regressors = false;
+        i_maneuver = [];
+        maneuver_label = [];
+    elseif nargin == 18
+        param_fix = varargin{1};
+        plt_fit = varargin{2};
+        TLS_tf = varargin{3};
+        nondim_unsteday_regress = varargin{4};
+        c_b_w = varargin{5};
+        b_w = varargin{6};
+        filt_regressors = false;
+        stand_regressors = false;
+        i_maneuver = [];
+        maneuver_label = [];
+    elseif nargin == 19
+        param_fix = varargin{1};
+        plt_fit = varargin{2};
+        TLS_tf = varargin{3};
+        nondim_unsteday_regress = varargin{4};
+        c_b_w = varargin{5};
+        b_w = varargin{6};
+        filt_regressors = varargin{7};
+        stand_regressors = false;
+        i_maneuver = [];
+        maneuver_label = [];
+    elseif nargin == 20
+        param_fix = varargin{1};
+        plt_fit = varargin{2};
+        TLS_tf = varargin{3};
+        nondim_unsteday_regress = varargin{4};
+        c_b_w = varargin{5};
+        b_w = varargin{6};
+        filt_regressors = varargin{7};
+        stand_regressors = varargin{8};
+        i_maneuver = [];
+        maneuver_label = [];
+    elseif nargin == 21
+        param_fix = varargin{1};
+        plt_fit = varargin{2};
+        TLS_tf = varargin{3};
+        nondim_unsteday_regress = varargin{4};
+        c_b_w = varargin{5};
+        b_w = varargin{6};
+        filt_regressors = varargin{7};
+        stand_regressors = varargin{8};
+        i_maneuver = varargin{9};
+        maneuver_label = [];
+    elseif nargin == 22
+        param_fix = varargin{1};
+        plt_fit = varargin{2};
+        TLS_tf = varargin{3};
+        nondim_unsteday_regress = varargin{4};
+        c_b_w = varargin{5};
+        b_w = varargin{6};
+        filt_regressors = varargin{7};
+        stand_regressors = varargin{8};
+        i_maneuver = varargin{9};
+        maneuver_label = varargin{10};
     else
         param_fix = [];
         plt_fit = false;
         TLS_tf = false;
         nondim_unsteday_regress = false;
+        c_b_w = [];
+        b_w = [];
+        filt_regressors = false;
+        stand_regressors = false;
+        i_maneuver = [];
+        maneuver_label = [];
     end
     if isempty(param_fix) == true
         param_fix = NaN(19,1);
@@ -128,6 +246,9 @@ function [theta_hat, P_est, C_i_est, Jc_opt, param_legend] = regress_aero_coef(C
     delta_a = delta_a*pi/180;
     delta_r = delta_r*pi/180;
     delta_f = delta_f*pi/180;
+    p = p*pi/180;
+    q = q*pi/180;
+    r = r*pi/180;
     V_inf = u_inf./cos(alpha)./cos(beta);
     N = length(alpha);
 
@@ -152,6 +273,27 @@ function [theta_hat, P_est, C_i_est, Jc_opt, param_legend] = regress_aero_coef(C
         '$C_{i,{\delta_r}_2}$',...
         '$C_{i,{\delta_f}_2}$'};
 
+    % for fprintf
+    var_reg_0 ={'C_{i_0} - - - - - - - ',...
+                'C_{i,alpha} - - - - - ',...
+                'C_{i,beta}  - - - - - ',...
+                'C_{i,{delta_e}} - - - ',...
+                'C_{i,{delta_a}} - - - ',...
+                'C_{i,{delta_r}} - - - ',...
+                'C_{i,{delta_f}} - - - ',...
+                'C_{i,{p}} - - - - - - ',...
+                'C_{i,{q}} - - - - - - ',...
+                'C_{i,{r}} - - - - - - ',...
+                'C_{i,{V}} - - - - - - ',...
+                'C_{i,{alpha beta}}  - ',...
+                'C_{i,{{alpha_2} beta}}',...
+                'C_{i,alpha_2} - - - - ',...
+                'C_{i,beta_2}  - - - - ',...
+                'C_{i,{delta_e}_2} - - ',...
+                'C_{i,{delta_a}_2} - - ',...
+                'C_{i,{delta_r}_2} - - ',...
+                'C_{i,{delta_f}_2} - - '};
+
     % formulate regressors-------------------------------------------------
     H_0 = ones(N,1);
     H_a = alpha;
@@ -161,8 +303,12 @@ function [theta_hat, P_est, C_i_est, Jc_opt, param_legend] = regress_aero_coef(C
     H_dr = delta_r;
     H_df = delta_f;
     if nondim_unsteday_regress == true
-        c_b_w = input('input value for mean aero chord in ft, c_b_w = ');
-        b_w = input('input value for wingspan  in ft, b_w = ');
+        if isempty(c_b_w)
+            c_b_w = input('input value for mean aero chord in ft, c_b_w = ');
+        end
+        if isempty(b_w)
+            b_w = input('input value for wingspan  in ft, b_w = ');
+        end
         H_p = r*b_w./V_inf;
         H_q = q*c_b_w./V_inf;
         H_r = r*b_w./V_inf;
@@ -187,7 +333,11 @@ function [theta_hat, P_est, C_i_est, Jc_opt, param_legend] = regress_aero_coef(C
     count = 1;
     for ii=1:length(param)
         if param(ii) == 1
-            H(:,count) = H_full(:,ii);
+            if filt_regressors == true
+                H(:,count) = LP_15smooth(H_full(:,ii));
+            else
+                H(:,count) = H_full(:,ii);
+            end
             count = count + 1;
         end
     end
@@ -204,8 +354,8 @@ function [theta_hat, P_est, C_i_est, Jc_opt, param_legend] = regress_aero_coef(C
 
     % perform regression---------------------------------------------------
     if TLS_tf == true % total least squares
-        disp('===================================')
-        disp('======= TOTAL LEAST-SQUARES =======')
+        disp('========================================================')
+        disp('================= TOTAL LEAST-SQUARES ==================')
         % Eqn 6.52 in Flight Vehicle System ID
         sig_nz = svds([H y],1,'smallestnz'); % smallest nonzero sigular value
         theta_hat = inv(H'*H - (sig_nz^2)*eye(length(H(1,:))))*H'*y;
@@ -218,54 +368,169 @@ function [theta_hat, P_est, C_i_est, Jc_opt, param_legend] = regress_aero_coef(C
         % VYY     = V(1+n:end, 1+n:end); % Take the bottom-right block of V.
         % theta_hat       = -VXY / VYY; % gives the same answer as 6.52
 
+
         C_i_est = H*theta_hat;
-        Jc_opt = norm((C_i_est - y),2); % this isn't right for TLS
-        count = 1;
-        param_legend = [];
-        for ii=1:length(param)
-            if param(ii) == 1
-                param_legend(ii) = string(var_reg(ii));
-                disp(append(string(var_reg(ii)),' = ',num2str(theta_hat(count)) ) )
-                count = count+1;
-            end
-        end
-        disp(append('---------- Jc = ',num2str(Jc_opt),'-----------'))
+        eps = (C_i_est - y); % residual
+        Jc_opt = norm(eps,2); % this isn't right for TLS
+        
         % uncertainty (follow Eqns. 6.21, 6.22 in Flight Vehicle Sys ID)
         %   this isn't right for TLS...
         sig_hat_2 = (Jc_opt^2)./(N - sum(param)); 
         P_est = (sig_hat_2/N)*inv(H'*H*(1/N));
 
-    else % ordinary least squares
-        disp('===================================')
-        disp('===== ORDINARY LEAST-SQUARES ======')
-        theta_hat = (H'*H)\H'*y;
-        C_i_est = H*theta_hat;
-        Jc_opt = norm((C_i_est - y),2);
+        % Predicted Square Error (PSE)
+        p_num = length(theta_hat); %number of parameters
+        sig_2_max = std(y).^2; % eqn 5.117 Morelli (conservative estimate)
+        PSE = eps'*eps/N + sig_2_max*p_num/N; % eqn 5.115 Morelli
+        
+        % R^2 coefficient (Coefficient of determination)
+        R2 = (theta_hat'*H'*y - (N*mean(y).^2))./(y'*y - N*(mean(y).^2));
+
+        % Condition number
+        C_num = cond(H);
+        if C_num > 100
+            warning('Large condition number! Collinearity in regressors is likely present.')
+        end
+
+        % VIF
+        VIF = zeros(length(H(1,:)),1);
+        for jj=1:length(VIF)
+            VIF(jj) = 1/(1 - (theta_hat(jj)'*H(:,jj)'*y - (N*mean(y).^2))./(y'*y - N*(mean(y).^2)));
+            if VIF(jj) > 10 
+                warning(append('Large VIF in Regressor # = ',num2str(jj),'. Likely collinear!'))
+            end
+        end
+
+        % Theil's Inequality Coefficient
+        %   Eqn 11.5 in Flight Vehicle System ID
+        U = sqrt(mean(eps.^2))./(sqrt(mean(y.^2)) + sqrt(mean(C_i_est.^2))); 
+
+
+        % print out estimates
         count = 1;
         param_legend = [];
+        disp('PARAMETER ------------ |  ESTIMATE  |  3 SIGMA  |  VIF  ')
         for ii=1:length(param)
             if param(ii) == 1
                 param_legend(ii) = string(var_reg(ii));
-                disp(append(string(var_reg(ii)),' = ',num2str(theta_hat(count)) ) )
+                %disp(append(string(var_reg(ii)),' = ',num2str(theta_hat(count)) ) )
+                
+                formatSpec = append(string(string(var_reg_0(ii))),' = %+8.7f | %8.7f | %6.4f \n');
+                sig_3 = 3*sqrt((P_est(count,count)));
+                fprintf(formatSpec,theta_hat(count),sig_3,VIF(count) )
+
                 count = count+1;
             end
         end
-        disp(append('---------- Jc = ',num2str(Jc_opt),'-----------'))
+
+
+        disp(append('------------- Condition Number = ',num2str(C_num),  '----------------'))
+        disp(append('-------------------- R^2 = ',num2str(R2),  '----------------------'))
+        disp(append('------------------- PSE = ',num2str(PSE),  '--------------------'))
+        disp(append('--------------------- Jc = ',num2str(Jc_opt),'----------------------'))
+        disp('========================================================')
+
+    else % ordinary least squares
+        disp('========================================================')
+        disp('================ ORDINARY LEAST-SQUARES ================')
         
+        if stand_regressors == true
+            if param(1) == 1
+                error('cannot include static term in normalization')
+            end
+            % normalize H matrix before solving
+            [H_N,C,S] = normalize(H);
+            H_N = H_N + C./S; % remove centering term in scaled H matrix
+            theta_hat = ((H_N'*H_N)\H_N'*y)./S';
+            C_i_est = H*theta_hat;
+        else
+            theta_hat = (H'*H)\H'*y; % estimate of parameters
+            C_i_est = H*theta_hat; % estimate of coefficient
+        end
+        
+        eps = (C_i_est - y);
+        Jc_opt = norm(eps,2); % 2 norm of residual
+
+        % Predicted Square Error (PSE)
+        p_num = length(theta_hat); %number of parameters
+        sig_2_max = std(y).^2; % eqn 5.117 Morelli (conservative estimate)
+        PSE = eps'*eps/N + sig_2_max*p_num/N; % eqn 5.115 Morelli
+
+        % R^2 coefficient (Coefficient of determination)
+        R2 = (theta_hat'*H'*y - (N*mean(y).^2))./(y'*y - N*(mean(y).^2));
+
+        % condition number
+        sig_val = svd(H);
+        C_num = max(sig_val)/min(sig_val(sig_val>0));
+        %C_num = cond(H); Equivalent to the singular value formula above
+        if C_num > 100
+            warning('Large condition number! Collinearity in regressors is likely present.')
+        end
+
+        % VIF 
+        VIF = zeros(length(H(1,:)),1);
+        for jj=1:length(VIF)
+            VIF(jj) = 1/(1 - (theta_hat(jj)'*H(:,jj)'*y - (N*mean(y).^2))./(y'*y - N*(mean(y).^2)));
+            if VIF(jj) > 10 
+                warning(append('Large VIF in Regressor # = ',num2str(jj),'. Likely collinear!'))
+            end
+        end
+
+        % Theil's Inequality Coefficient
+        %   Eqn 11.5 in Flight Vehicle System ID
+        U = sqrt(mean(eps.^2))./(sqrt(mean(y.^2)) + sqrt(mean(C_i_est.^2))); 
+
         % uncertainty (follow Eqns. 6.21, 6.22 in Flight Vehicle Sys ID)
         sig_hat_2 = (Jc_opt^2)./(N - sum(param));
         P_est = (sig_hat_2/N)*inv(H'*H*(1/N));
+
+        % print out variable estimates
+        count = 1;
+        param_legend = [];
+        disp('PARAMETER ------------ |  ESTIMATE  |  3 SIGMA  |  VIF  ')
+        for ii=1:length(param)
+            if param(ii) == 1
+                param_legend(ii) = string(var_reg(ii));
+                %disp(append(string(var_reg(ii)),' = ',num2str(theta_hat(count)) ) )
+                
+                
+                formatSpec = append(string(string(var_reg_0(ii))),' = %+8.7f | %8.7f | %6.4f \n');
+                sig_3 = 3*sqrt((P_est(count,count)));
+                fprintf(formatSpec,theta_hat(count),sig_3,VIF(count) )
+                count = count+1;
+            end
+        end
+
+        
+
+        disp(append('------------- Condition Number = ',num2str(C_num),  '----------------'))
+        disp(append('-------------------- R^2 = ',num2str(R2),  '----------------------'))
+        disp(append('------------------- PSE = ',num2str(PSE),  '--------------------'))
+        disp(append('----------- Theils Inequality Coef = ',num2str(U),  '------------'))
+        disp(append('--------------------- Jc = ',num2str(Jc_opt),'---------------------'))
+        disp('========================================================')
     end
+
+    % optional outputs
+    varargout{1} = PSE;
+    varargout{2} = R2;
+    varargout{3} = C_num; 
+    varargout{4} = VIF;
+    varargout{5} = U;
+
 
     % plot fit-------------------------------------------------------------
     if plt_fit == true
         figure(950)
         plot(y,'*'); hold on
         plot(C_i_est,'.')
-        xlabel('timestep','FontSize',15,'Interpreter','latex')
-        ylabel('$y$','FontSize',15,'Interpreter','latex');
-        legend('Measured $C_i$','Fitted $C_i$','Interpreter','latex')
+        xlabel('timestep','FontSize',20,'Interpreter','latex')
+        ylabel('$y$','FontSize',20,'Interpreter','latex');
+        legend('Measured $C_i$','Fitted $C_i$','Interpreter','latex','FontSize',15)
         grid on;
+        if isempty(i_maneuver) == false && length(i_maneuver) > 1
+            xline(i_maneuver,'-',maneuver_label,'Interpreter','none','HandleVisibility','off','LabelHorizontalAlignment','left')
+        end
         hold off;
     end
 end
